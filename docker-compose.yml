@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: yggdrasil_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 2s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - test-db:/var/lib/postgresql/data
+
+  backend:
+    image: ghcr.io/yggdrasilcloud/backend:${BACKEND_VERSION:-latest}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://test:test@db:5432/yggdrasil_test
+      APP_ENV: test
+      CORS_ALLOW_ORIGIN: "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$$"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    profiles:
+      - compose
+
+  frontend:
+    image: ghcr.io/yggdrasilcloud/frontend:${FRONTEND_VERSION:-latest}
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    profiles:
+      - compose
+
+  seed:
+    image: ghcr.io/yggdrasilcloud/backend:${BACKEND_VERSION:-latest}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://test:test@db:5432/yggdrasil_test
+      APP_ENV: test
+    command: php bin/console app:seed:test
+    volumes:
+      - ./fixtures:/app/fixtures:ro
+    profiles:
+      - manual
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.40.0-jammy
+    depends_on:
+      - frontend
+      - backend
+    environment:
+      BASE_URL: http://frontend:5173
+      CI: "true"
+    working_dir: /app
+    volumes:
+      - ./tests:/app/tests:ro
+      - ./playwright.config.ts:/app/playwright.config.ts:ro
+      - ./global-setup.ts:/app/global-setup.ts:ro
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    command: npx playwright test
+    profiles:
+      - manual
+
+volumes:
+  test-db:

@@ -1,0 +1,26 @@
+{
+	"name": "@yggdrasilcloud/tests-e2e",
+	"version": "1.0.0",
+	"description": "End-to-end tests for YggdrasilCloud",
+	"private": true,
+	"scripts": {
+		"test": "playwright test",
+		"test:ui": "playwright test --ui",
+		"test:debug": "playwright test --debug",
+		"test:headed": "playwright test --headed",
+		"test:report": "playwright show-report",
+		"setup": "./scripts/setup.sh",
+		"seed": "./scripts/seed.sh",
+		"cleanup": "docker compose down -v",
+		"e2e": "./scripts/run-tests.sh",
+		"e2e:compose": "docker compose up -d db backend frontend && npx wait-on tcp:localhost:5432 http://localhost:8000/health http://localhost:5173 && ./scripts/seed.sh && playwright test",
+		"e2e:local": "docker compose up -d db && npx wait-on tcp:localhost:5432 && ./scripts/seed.sh && playwright test"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.40.0",
+		"wait-on": "^7.2.0"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
+}
