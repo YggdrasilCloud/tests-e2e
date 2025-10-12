@@ -12,9 +12,7 @@
 		"setup": "./scripts/setup.sh",
 		"seed": "./scripts/seed.sh",
 		"cleanup": "docker compose down -v",
-		"e2e": "./scripts/run-tests.sh",
-		"e2e:compose": "docker compose up -d db backend frontend && npx wait-on tcp:localhost:5432 http://localhost:8000/health http://localhost:5173 && ./scripts/seed.sh && playwright test",
-		"e2e:local": "docker compose up -d db && npx wait-on tcp:localhost:5432 && ./scripts/seed.sh && playwright test"
+		"e2e": "./scripts/run-tests.sh"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.40.0",

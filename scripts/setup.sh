@@ -13,26 +13,32 @@ fi
 echo "🧹 Cleaning up existing containers..."
 docker compose down -v 2>/dev/null || true
 
-# Start database
-echo "📦 Starting database..."
-docker compose up -d db
+# Start all services (DB, Backend, Frontend)
+echo "📦 Starting services (DB, Backend, Frontend)..."
+docker compose up -d
 
-# Wait for database to be healthy
-echo "⏳ Waiting for database..."
-timeout 30 bash -c 'until docker compose ps db | grep -q "healthy"; do sleep 1; done' || {
-    echo "❌ Database failed to start"
+# Wait for all services to be healthy
+echo "⏳ Waiting for services to be healthy..."
+timeout 120 bash -c 'until docker compose ps | grep -q "backend.*healthy" && docker compose ps | grep -q "frontend.*Up"; do echo "  Still waiting..."; sleep 2; done' || {
+    echo "❌ Services failed to start"
+    echo ""
+    echo "Check logs with:"
+    echo "  docker compose logs db"
+    echo "  docker compose logs backend"
+    echo "  docker compose logs frontend"
     exit 1
 }
 
-echo "✅ Database is ready!"
+echo "✅ All services are ready!"
+echo ""
+echo "Services running:"
+echo "  - Database:  postgresql://test:test@localhost:5432/yggdrasil_test"
+echo "  - Backend:   http://localhost:8000"
+echo "  - Frontend:  http://localhost:5173"
 echo ""
 echo "Next steps:"
-echo "  1. Start your backend:  cd ../backend && npm run dev"
-echo "  2. Start your frontend: cd ../frontend && npm run dev"
-echo "  3. Seed test data:      npm run seed"
-echo "  4. Run tests:           npm test"
+echo "  1. Seed test data:  npm run seed"
+echo "  2. Run tests:       npm test"
 echo ""
-echo "Or use Docker Compose for everything:"
-echo "  docker compose --profile compose up -d"
-echo "  npm run seed"
-echo "  npm test"
+echo "View logs:"
+echo "  docker compose logs -f"

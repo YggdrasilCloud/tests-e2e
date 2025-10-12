@@ -33,8 +33,6 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
-    profiles:
-      - compose
 
   frontend:
     image: ghcr.io/yggdrasilcloud/frontend:${FRONTEND_VERSION:-latest}
@@ -45,8 +43,6 @@ services:
       PUBLIC_API_URL: http://localhost:8000
     ports:
       - "5173:5173"
-    profiles:
-      - compose
 
   seed:
     image: ghcr.io/yggdrasilcloud/backend:${BACKEND_VERSION:-latest}

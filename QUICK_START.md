@@ -1,218 +1,331 @@
 # Quick Start Guide
 
-## 🚀 For Developers (Local Development)
+## 🚀 Simple Workflow (Everything in Docker)
 
 ### First Time Setup
 
 ```bash
-# 1. Clone the repo
+# 1. Clone and install
 git clone git@github.com:YggdrasilCloud/tests-e2e.git
 cd tests-e2e
-
-# 2. Install dependencies
 npm install
 
-# 3. Start database
+# 2. Start all services (DB + Backend + Frontend)
 npm run setup
+
+# 3. Seed test data
+npm run seed
+
+# 4. Run tests
+npm test
 ```
+
+That's it! 🎉
 
 ### Daily Workflow
 
-You're actively coding on backend/frontend and want to test:
-
 ```bash
-# Terminal 1: Database (keep running)
-docker compose up -d db
+# Start services (if not already running)
+docker compose up -d
 
-# Terminal 2: Backend
-cd ../backend
-npm run dev
-
-# Terminal 3: Frontend
-cd ../frontend
-npm run dev
-
-# Terminal 4: Tests (run when needed)
-cd ../tests-e2e
-npm run seed  # Only once, or after schema changes
-npm test      # Run tests anytime
-```
-
-### Quick Commands
-
-```bash
-# Run all tests
+# Run tests anytime
 npm test
 
-# Run with UI (great for debugging)
+# Stop services when done
+docker compose down
+```
+
+## 📦 What's Running
+
+After `npm run setup` or `docker compose up -d`:
+
+| Service | URL | Container |
+|---------|-----|-----------|
+| Database | `postgresql://test:test@localhost:5432/yggdrasil_test` | `tests-e2e-db-1` |
+| Backend (Symfony) | http://localhost:8000 | `tests-e2e-backend-1` |
+| Frontend (SvelteKit) | http://localhost:5173 | `tests-e2e-frontend-1` |
+
+Playwright runs **on your machine** (not in Docker) so you can use UI mode.
+
+## 🎯 Common Commands
+
+```bash
+# Setup: Start all services
+npm run setup
+
+# Seed: Load test data
+npm run seed
+
+# Test: Run all tests
+npm test
+
+# Test UI: Interactive mode (best for development)
 npm run test:ui
 
-# Run specific test file
-npx playwright test tests/folders.spec.ts
-
-# Run specific browser
-npx playwright test --project=chromium
-
-# See test report
-npm run test:report
-```
-
-## 🐳 For CI/CD (Full Docker)
-
-### One-Time Setup
-
-```bash
-git clone git@github.com:YggdrasilCloud/tests-e2e.git
-cd tests-e2e
-npm install
-```
-
-### Run Tests Against Docker Images
-
-```bash
-# Pull latest images and run tests
-docker compose --profile compose up -d
-npm run seed
-npm test
-
-# Cleanup
-npm run cleanup
-```
-
-### Test Specific Versions
-
-```bash
-# Set versions
-export BACKEND_VERSION=abc123
-export FRONTEND_VERSION=def456
-
-# Run tests
-docker compose --profile compose up -d
-npm run seed
-npm test
-```
-
-## 🔧 Common Tasks
-
-### Reseed Data
-
-After changing database schema or needing fresh data:
-
-```bash
-npm run seed
-```
-
-### Cleanup Everything
-
-Remove all containers and volumes:
-
-```bash
-npm run cleanup
-```
-
-### Debug Failing Test
-
-```bash
-# Run in headed mode (see browser)
+# Test headed: See the browser
 npm run test:headed
 
-# Or use debug mode (step through)
+# Test debug: Step through tests
 npm run test:debug
 
-# Or use UI mode (best for debugging)
+# Report: View test results
+npm run test:report
+
+# Cleanup: Stop and remove everything
+npm run cleanup
+```
+
+## 🎭 Playwright Modes
+
+### Regular Mode (Headless)
+```bash
+npm test
+```
+Fast, runs in background. Good for CI or quick checks.
+
+### UI Mode (Recommended for Development)
+```bash
 npm run test:ui
+```
+- 👁️ See tests run in browser
+- ⏸️ Pause and step through
+- 🔍 Inspect elements
+- 📝 Watch mode (auto-rerun on file changes)
+
+### Headed Mode
+```bash
+npm run test:headed
+```
+See actual browser windows open. Good for debugging visual issues.
+
+### Debug Mode
+```bash
+npm run test:debug
+```
+Step through tests line by line with Playwright Inspector.
+
+## 🔧 Working with Services
+
+### View Logs
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f db
+```
+
+### Restart a Service
+```bash
+# Restart backend
+docker compose restart backend
+
+# Restart frontend
+docker compose restart frontend
 ```
 
 ### Check Service Status
-
 ```bash
-# See what's running
 docker compose ps
-
-# View logs
-docker compose logs backend
-docker compose logs frontend
-docker compose logs db
 ```
 
-## 🎯 Cheat Sheet
-
-| Scenario | Command |
-|----------|---------|
-| First time setup | `npm install && npm run setup` |
-| Daily dev workflow | `docker compose up -d db` then run backend/frontend locally |
-| Quick test run | `npm run e2e` (auto-detects services) |
-| Debug test | `npm run test:ui` |
-| Reseed data | `npm run seed` |
-| Full cleanup | `npm run cleanup` |
-| CI-like test | `docker compose --profile compose up -d && npm run seed && npm test` |
-
-## 🆘 Troubleshooting
-
-### "Application not ready after 60 seconds"
-
-**Fix**:
+### Execute Commands in Backend
 ```bash
-# Check services
-docker compose ps
+# Run Symfony console command
+docker compose exec backend php bin/console list
 
-# Restart everything
+# Check backend health
+curl http://localhost:8000/health
+```
+
+## 🌱 Working with Test Data
+
+### Reseed Data
+After changing database schema or when you need fresh data:
+
+```bash
+npm run seed
+```
+
+The seed command:
+1. Purges the test database
+2. Creates test folders
+3. Uploads test photos from `fixtures/photos/`
+4. Generates thumbnails and metadata
+
+### Add Your Own Test Photos
+
+```bash
+# Add photos to fixtures directory
+cp ~/Pictures/*.jpg fixtures/photos/
+
+# Reseed to use new photos
+npm run seed
+```
+
+## 🐛 Troubleshooting
+
+### Services won't start
+
+```bash
+# Check what's using the ports
+lsof -i :5432  # Database
+lsof -i :8000  # Backend
+lsof -i :5173  # Frontend
+
+# Clean everything and start fresh
 npm run cleanup
 npm run setup
+```
+
+### Tests timeout
+
+```bash
+# Check all services are healthy
+docker compose ps
+
+# View backend health
+curl http://localhost:8000/health
+
+# View frontend
+curl http://localhost:5173
 ```
 
 ### "No folders available for testing"
 
-**Fix**:
 ```bash
+# Seed data is missing
 npm run seed
 ```
 
-### "Port already in use"
+### Backend container fails
 
-**Fix**:
 ```bash
-# Stop conflicting service
-docker ps
-docker stop <container-id>
+# View backend logs
+docker compose logs backend
 
-# Or kill the process
-lsof -ti:5432 | xargs kill
-lsof -ti:8000 | xargs kill
-lsof -ti:5173 | xargs kill
+# Common issues:
+# - Database not ready → wait a bit longer
+# - Image not pulled → docker compose pull backend
+# - Port conflict → check port 8000
 ```
 
-### Tests are slow
+## 📊 Test Results
 
-**Fix**:
+### View HTML Report
 ```bash
-# Run fewer browsers
-npx playwright test --project=chromium
+npm run test:report
+```
 
-# Or increase workers
+Opens a nice HTML report with:
+- ✅ Passed tests
+- ❌ Failed tests
+- 📸 Screenshots of failures
+- 🎥 Videos of failures
+- 📝 Detailed traces
+
+### Failed Test Artifacts
+
+When tests fail, check:
+- `test-results/` - Screenshots, videos, traces
+- `playwright-report/` - HTML report
+
+### Example: Debug a Failed Test
+
+```bash
+# 1. See which tests failed
+npm test
+
+# 2. Open the report
+npm run test:report
+
+# 3. Click on failed test to see:
+#    - Screenshot of failure
+#    - Video of test run
+#    - Network requests
+#    - Console logs
+
+# 4. Or run in UI mode to debug
+npm run test:ui
+```
+
+## ⚡ Performance Tips
+
+### Run Specific Tests
+```bash
+# Single file
+npx playwright test tests/folders.spec.ts
+
+# Single test
+npx playwright test -g "should create folder"
+
+# Single browser
+npx playwright test --project=chromium
+```
+
+### Parallel Execution
+```bash
+# More workers = faster (default: CPU cores)
 npx playwright test --workers=8
+
+# One worker (for debugging)
+npx playwright test --workers=1
+```
+
+## 🔄 Typical Development Loop
+
+```bash
+# 1. Start services (once)
+npm run setup
+
+# 2. Open test UI
+npm run test:ui
+
+# 3. Edit tests in your IDE
+# 4. Tests auto-rerun in UI
+# 5. Click through UI to debug failures
+
+# 6. When done
+docker compose down
 ```
 
 ## 📚 Next Steps
 
 - Read [README.md](README.md) for detailed documentation
-- Check [MIGRATION.md](MIGRATION.md) to migrate existing tests
-- See [TODO.md](TODO.md) for implementation tasks
-- View [Playwright docs](https://playwright.dev) for test writing
+- Check [MIGRATION.md](MIGRATION.md) if migrating from frontend
+- See [TODO.md](TODO.md) for remaining tasks
+- Learn [Playwright](https://playwright.dev/docs/intro)
 
 ## 💡 Pro Tips
 
-1. **Keep database running**: `docker compose up -d db` and leave it
-2. **Use test:ui**: Best way to develop and debug tests
+1. **Keep services running**: `docker compose up -d` and leave them running all day
+2. **Use test:ui**: Best development experience, auto-rerun on changes
 3. **Seed once**: Only reseed when schema changes, not before every test run
-4. **Watch mode**: In test:ui, tests auto-rerun on file changes
-5. **Screenshots**: Failed tests automatically save screenshots in `test-results/`
-6. **Parallel tests**: Tests run in parallel by default (faster)
-7. **Trace viewer**: `npx playwright show-trace test-results/.../trace.zip`
+4. **Check logs**: `docker compose logs -f` to see what's happening
+5. **Clean slate**: `npm run cleanup && npm run setup` for fresh start
+6. **Trace viewer**: For deep debugging, view trace files from failed tests
 
-## 🎓 Learning Resources
+## ❓ FAQ
 
-- [Playwright Best Practices](https://playwright.dev/docs/best-practices)
-- [Selectors Guide](https://playwright.dev/docs/selectors)
-- [Test Fixtures](https://playwright.dev/docs/test-fixtures)
-- [CI Configuration](https://playwright.dev/docs/ci)
+**Q: Do I need to rebuild images when backend/frontend code changes?**
+A: Yes. Pull new images: `docker compose pull` then restart: `docker compose up -d`
+
+**Q: Can I use my local backend/frontend instead of Docker?**
+A: No, this setup is Docker-only for consistency. Backend is Symfony (PHP), not Node.js.
+
+**Q: Why is Playwright not in Docker?**
+A: Running on host allows UI mode (`npm run test:ui`) which is essential for development.
+
+**Q: How do I test against specific versions?**
+A: Set env vars:
+```bash
+BACKEND_VERSION=abc123 FRONTEND_VERSION=def456 docker compose up -d
+```
+
+**Q: Tests are slow, how to speed up?**
+A: Run fewer browsers:
+```bash
+npx playwright test --project=chromium
+```
