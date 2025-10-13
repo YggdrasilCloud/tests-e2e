@@ -4,20 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   schedule:
     - cron: '0 2 * * *' # Daily at 2 AM UTC
   workflow_dispatch:
-    inputs:
-      backend_version:
-        description: 'Backend Docker image version'
-        required: false
-        default: 'latest'
-      frontend_version:
-        description: 'Frontend Docker image version'
-        required: false
-        default: 'latest'
-  repository_dispatch:
-    types: [run-e2e]
 
 jobs:
   e2e-tests:
@@ -25,8 +15,10 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with submodules
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -40,36 +32,13 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Set Docker image versions
-        run: |
-          echo "BACKEND_VERSION=${{ github.event.inputs.backend_version || github.event.client_payload.backend_version || 'latest' }}" >> $GITHUB_ENV
-          echo "FRONTEND_VERSION=${{ github.event.inputs.frontend_version || github.event.client_payload.frontend_version || 'latest' }}" >> $GITHUB_ENV
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull Docker images
-        run: |
-          docker pull ghcr.io/yggdrasilcloud/backend:${{ env.BACKEND_VERSION }}
-          docker pull ghcr.io/yggdrasilcloud/frontend:${{ env.FRONTEND_VERSION }}
-
-      - name: Start services
-        run: |
-          docker compose --profile compose up -d
-          docker compose ps
-
-      - name: Wait for services to be healthy
-        run: |
-          timeout 60 bash -c 'until docker compose ps | grep -q "healthy"; do echo "Waiting..."; sleep 2; done'
+      - name: Start services (DB + Backend + Frontend)
+        run: npm run setup
 
       - name: Seed test data
-        run: docker compose run --rm seed
+        run: npm run seed
 
-      - name: Run Playwright tests
+      - name: Run E2E tests
         run: npm test
         env:
           CI: true
