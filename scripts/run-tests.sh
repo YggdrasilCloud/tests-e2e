@@ -18,7 +18,7 @@ echo ""
 
 # Run Playwright tests
 echo "🎬 Running Playwright tests..."
-BASE_URL=http://localhost:5173 npx playwright test "$@"
+BASE_URL=http://localhost:5174 npx playwright test "$@"
 
 EXIT_CODE=$?
 

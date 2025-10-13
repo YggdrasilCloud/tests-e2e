@@ -1,7 +1,7 @@
 import { chromium, FullConfig } from '@playwright/test';
 
 async function globalSetup(config: FullConfig) {
-	const baseURL = config.use?.baseURL || 'http://localhost:5173';
+	const baseURL = config.use?.baseURL || 'http://localhost:5174';
 
 	console.log('🔍 Waiting for application to be ready...');
 	console.log(`   Base URL: ${baseURL}`);
