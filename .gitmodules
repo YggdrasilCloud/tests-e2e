@@ -1,3 +1,9 @@
 [submodule "frontend-submodule"]
 	path = frontend-submodule
 	url = ../frontend
+[submodule "docker-submodule"]
+	path = docker-submodule
+	url = ../docker
+[submodule "core-submodule"]
+	path = core-submodule
+	url = ../core

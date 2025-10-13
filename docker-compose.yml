@@ -17,7 +17,7 @@ services:
 
   backend:
     build:
-      context: ../docker/images/server
+      context: ./docker-submodule/images/server
       dockerfile: Dockerfile
       target: dev
       args:
@@ -33,7 +33,7 @@ services:
     ports:
       - "8001:8000"  # Port 8001 sur l'hôte pour éviter conflit avec backend de dev
     volumes:
-      - ../core:/app:cached
+      - ./core-submodule:/app:cached
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     user: root
     command: >
@@ -52,7 +52,7 @@ services:
 
   frontend:
     build:
-      context: ../frontend
+      context: ./frontend-submodule
       dockerfile: Dockerfile
       target: development
     depends_on:
@@ -63,7 +63,7 @@ services:
     ports:
       - "5174:5173"  # Port 5174 sur l'hôte pour éviter conflit avec frontend de dev
     volumes:
-      - ../frontend:/app:cached
+      - ./frontend-submodule:/app:cached
       - /app/node_modules
       - ./.env.frontend:/app/.env:ro  # Override .env with E2E-specific config
     healthcheck:
@@ -75,7 +75,7 @@ services:
 
   seed:
     build:
-      context: ../docker/images/server
+      context: ./docker-submodule/images/server
       dockerfile: Dockerfile
       target: dev
     depends_on:
@@ -86,7 +86,7 @@ services:
       APP_ENV: test
     command: php bin/console app:seed:test
     volumes:
-      - ../core:/app:cached
+      - ./core-submodule:/app:cached
       - ./fixtures:/app/fixtures:ro
     profiles:
       - manual
