@@ -65,7 +65,7 @@ npm test
 |---------|-------------|
 | `npm run setup` | Démarre tous les services Docker (DB + Backend + Frontend) |
 | `npm run seed` | Seed la base de données avec des données de test |
-| `npm test` | Lance tous les tests E2E (185 tests × 5 navigateurs) |
+| `npm test` | Lance tous les tests E2E (175/180 passent ✅) |
 | `npm run test:chromium` | Lance les tests sur Chromium uniquement |
 | `npm run test:ui` | Ouvre Playwright UI mode |
 | `npm run test:debug` | Lance les tests en mode debug |
@@ -154,7 +154,8 @@ Les tests s'exécutent sur **5 navigateurs** :
 4. **Mobile Chrome** (Pixel 5)
 5. **Mobile Safari** (iPhone 12)
 
-**Total** : **185 tests** (37 tests × 5 browsers)
+**Total** : **180 tests** (36 tests × 5 browsers)
+**Résultat** : ✅ **175 passent** (97%) | ⏭️ 5 skipped (3%)
 
 ### Run specific browser
 
@@ -296,7 +297,7 @@ Utilisez `repository_dispatch` pour déclencher les tests E2E quand le frontend 
 tests-e2e/
 ├── .github/workflows/      # GitHub Actions CI
 ├── frontend-submodule/     # Git submodule → ../frontend
-│   └── tests/e2e/         # Tests Playwright (source de vérité)
+│   └── tests/e2e/         # 36 tests Playwright (175/180 passent ✅)
 ├── fixtures/               # Photos de test
 │   └── photos/
 │       ├── blue-sample.jpg
