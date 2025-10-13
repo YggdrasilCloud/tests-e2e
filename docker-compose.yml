@@ -8,7 +8,7 @@ services:
     ports:
       - "5433:5432"  # Port 5433 sur l'hôte pour éviter conflit avec DB de dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test"]
+      test: ["CMD-SHELL", "pg_isready -U test -d yggdrasil_test"]
       interval: 2s
       timeout: 3s
       retries: 5
