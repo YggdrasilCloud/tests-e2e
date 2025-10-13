@@ -65,6 +65,7 @@ services:
     volumes:
       - ../frontend:/app:cached
       - /app/node_modules
+      - ./.env.frontend:/app/.env:ro  # Override .env with E2E-specific config
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:5173"]
       interval: 2s
