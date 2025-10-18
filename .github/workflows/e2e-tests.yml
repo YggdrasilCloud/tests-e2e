@@ -1,0 +1,215 @@
+name: E2E Tests
+
+on:
+  repository_dispatch:
+    types: [test-core-release, test-frontend-release, verify-release]
+  workflow_dispatch:
+    inputs:
+      core_ref:
+        description: 'Core ref (tag, branch, or sha)'
+        required: true
+        default: 'main'
+      frontend_ref:
+        description: 'Frontend ref (tag, branch, or sha)'
+        required: true
+        default: 'main'
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    name: e2e-tests
+    steps:
+      - name: Checkout tests-e2e
+        uses: actions/checkout@v4
+
+      - name: Resolve versions
+        id: versions
+        run: |
+          # Set versions from payload or workflow_dispatch inputs
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            CORE_REF="${{ github.event.client_payload.core_ref }}"
+            FRONTEND_REF="${{ github.event.client_payload.frontend_ref }}"
+            CORE_SHA="${{ github.event.client_payload.core_sha }}"
+            FRONTEND_SHA="${{ github.event.client_payload.frontend_sha }}"
+            TRIGGERED_BY="${{ github.event.client_payload.triggered_by }}"
+            TARGET_VERSION="${{ github.event.client_payload.target_version }}"
+            DRY_RUN="${{ github.event.client_payload.dry_run }}"
+            VERIFICATION_TYPE="${{ github.event.client_payload.verification_type }}"
+          else
+            CORE_REF="${{ inputs.core_ref }}"
+            FRONTEND_REF="${{ inputs.frontend_ref }}"
+            CORE_SHA=""
+            FRONTEND_SHA=""
+            TRIGGERED_BY="manual"
+            TARGET_VERSION="manual"
+            DRY_RUN="false"
+            VERIFICATION_TYPE=""
+          fi
+
+          echo "core_ref=$CORE_REF" >> $GITHUB_OUTPUT
+          echo "frontend_ref=$FRONTEND_REF" >> $GITHUB_OUTPUT
+          echo "core_sha=$CORE_SHA" >> $GITHUB_OUTPUT
+          echo "frontend_sha=$FRONTEND_SHA" >> $GITHUB_OUTPUT
+          echo "triggered_by=$TRIGGERED_BY" >> $GITHUB_OUTPUT
+          echo "target_version=$TARGET_VERSION" >> $GITHUB_OUTPUT
+          echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
+          echo "verification_type=$VERIFICATION_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Check for duplicate run
+        if: steps.versions.outputs.verification_type == 'post-tag'
+        id: dedup
+        run: |
+          # Create hash of core_ref + frontend_ref
+          HASH=$(echo "${{ steps.versions.outputs.core_ref }}+${{ steps.versions.outputs.frontend_ref }}" | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+          # Check if we already ran this exact combination in the last 24h
+          EXISTING=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/YggdrasilCloud/tests-e2e/actions/runs \
+            --jq "[.workflow_runs[] | select(.name == \"E2E Tests\" and .created_at > (now - 86400 | strftime(\"%Y-%m-%dT%H:%M:%SZ\"))) | select(.conclusion == \"success\")] | length")
+
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "Found existing successful run for this combination in the last 24h"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip duplicate verification
+        if: steps.dedup.outputs.skip == 'true'
+        run: |
+          echo "Skipping E2E run - already tested this combination successfully"
+          exit 0
+
+      - name: Create .env file
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          cat > .env <<EOF
+          CORE_VERSION=${{ steps.versions.outputs.core_ref }}
+          FRONTEND_VERSION=${{ steps.versions.outputs.frontend_ref }}
+          EOF
+
+          echo "Generated .env file:"
+          cat .env
+
+      - name: Resolve commit SHAs
+        if: steps.dedup.outputs.skip != 'true'
+        id: shas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Resolve core SHA if not provided
+          if [ -z "${{ steps.versions.outputs.core_sha }}" ]; then
+            CORE_SHA=$(gh api repos/YggdrasilCloud/core/commits/${{ steps.versions.outputs.core_ref }} --jq '.sha')
+          else
+            CORE_SHA="${{ steps.versions.outputs.core_sha }}"
+          fi
+
+          # Resolve frontend SHA if not provided
+          if [ -z "${{ steps.versions.outputs.frontend_sha }}" ]; then
+            FRONTEND_SHA=$(gh api repos/YggdrasilCloud/frontend/commits/${{ steps.versions.outputs.frontend_ref }} --jq '.sha')
+          else
+            FRONTEND_SHA="${{ steps.versions.outputs.frontend_sha }}"
+          fi
+
+          echo "core_sha=$CORE_SHA" >> $GITHUB_OUTPUT
+          echo "frontend_sha=$FRONTEND_SHA" >> $GITHUB_OUTPUT
+
+      - name: Start services
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+          docker compose ps
+
+      - name: Wait for services to be ready
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          echo "Waiting for core API to be ready..."
+          timeout 120 bash -c 'until curl -f http://localhost:8001/health; do echo "Waiting..."; sleep 2; done'
+
+          echo "Waiting for frontend to be ready..."
+          timeout 120 bash -c 'until curl -f http://localhost:5174; do echo "Waiting..."; sleep 2; done'
+
+          echo "Services are ready!"
+
+      - name: Setup Node.js
+        if: steps.dedup.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.dedup.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Run E2E tests
+        if: steps.dedup.outputs.skip != 'true'
+        run: npm run test:e2e
+
+      - name: Create metadata artifact
+        if: always() && steps.dedup.outputs.skip != 'true'
+        run: |
+          mkdir -p artifacts
+
+          cat > artifacts/e2e-run-metadata.json <<EOF
+          {
+            "core_ref": "${{ steps.versions.outputs.core_ref }}",
+            "core_sha": "${{ steps.shas.outputs.core_sha }}",
+            "frontend_ref": "${{ steps.versions.outputs.frontend_ref }}",
+            "frontend_sha": "${{ steps.shas.outputs.frontend_sha }}",
+            "triggered_by": "${{ steps.versions.outputs.triggered_by }}",
+            "target_version": "${{ steps.versions.outputs.target_version }}",
+            "dry_run": ${{ steps.versions.outputs.dry_run }},
+            "verification_type": "${{ steps.versions.outputs.verification_type }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow_run_id": "${{ github.run_id }}",
+            "e2e_result": "${{ job.status }}"
+          }
+          EOF
+
+          echo "Generated metadata:"
+          cat artifacts/e2e-run-metadata.json
+
+      - name: Upload test artifacts
+        if: always() && steps.dedup.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ github.run_id }}
+          path: |
+            artifacts/
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v || true
+
+      - name: Report status back to triggering repo
+        if: always() && github.event_name == 'repository_dispatch' && steps.dedup.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const triggeredBy = '${{ steps.versions.outputs.triggered_by }}';
+            const sha = triggeredBy === 'core'
+              ? '${{ steps.shas.outputs.core_sha }}'
+              : '${{ steps.shas.outputs.frontend_sha }}';
+            const status = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+
+            if (triggeredBy !== 'manual') {
+              await github.rest.repos.createCommitStatus({
+                owner: 'YggdrasilCloud',
+                repo: triggeredBy,
+                sha: sha,
+                state: status,
+                context: 'E2E Tests',
+                description: `E2E tests ${status}`,
+                target_url: `https://github.com/YggdrasilCloud/tests-e2e/actions/runs/${{ github.run_id }}`
+              });
+            }
