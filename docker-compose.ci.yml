@@ -1,0 +1,21 @@
+# Docker Compose override for CI/CD
+# Uses Docker images with versions from .env file
+# Usage: docker compose -f docker-compose.yml -f docker-compose.ci.yml up
+
+services:
+  backend:
+    image: yggdrasilcloud/core:${CORE_VERSION:-latest}
+    build: null  # Disable build, use image only
+    volumes: []  # No source code volumes
+
+  frontend:
+    image: yggdrasilcloud/frontend:${FRONTEND_VERSION:-latest}
+    build: null  # Disable build, use image only
+    volumes:
+      - /app/node_modules
+
+  seed:
+    image: yggdrasilcloud/core:${CORE_VERSION:-latest}
+    build: null
+    volumes:
+      - ./fixtures:/app/fixtures:ro
