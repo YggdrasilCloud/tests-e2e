@@ -163,9 +163,19 @@ jobs:
         if: steps.dedup.outputs.skip != 'true'
         run: npm ci
 
+      - name: Install Playwright browsers
+        if: steps.dedup.outputs.skip != 'true'
+        run: npx playwright install --with-deps
+
+      - name: Seed test data
+        if: steps.dedup.outputs.skip != 'true'
+        run: npm run seed
+
       - name: Run E2E tests
         if: steps.dedup.outputs.skip != 'true'
-        run: npm run test:e2e
+        run: npm test
+        env:
+          CI: true
 
       - name: Create metadata artifact
         if: always() && steps.dedup.outputs.skip != 'true'
