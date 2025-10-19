@@ -100,7 +100,7 @@ jobs:
         if: steps.dedup.outputs.skip != 'true'
         id: shas
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           # Resolve core SHA if not provided
           if [ -z "${{ steps.versions.outputs.core_sha }}" ]; then
