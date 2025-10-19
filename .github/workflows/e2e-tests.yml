@@ -126,12 +126,12 @@ jobs:
         if: steps.dedup.outputs.skip != 'true'
         run: |
           cd core-submodule
-          git fetch origin
+          git fetch origin --tags
           git checkout ${{ steps.versions.outputs.core_ref }}
           cd ..
 
           cd frontend-submodule
-          git fetch origin
+          git fetch origin --tags
           git checkout ${{ steps.versions.outputs.frontend_ref }}
           cd ..
 
