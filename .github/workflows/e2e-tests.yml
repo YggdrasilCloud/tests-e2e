@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout tests-e2e
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
 
       - name: Resolve versions
         id: versions
@@ -119,10 +122,23 @@ jobs:
           echo "core_sha=$CORE_SHA" >> $GITHUB_OUTPUT
           echo "frontend_sha=$FRONTEND_SHA" >> $GITHUB_OUTPUT
 
+      - name: Checkout submodules to specific versions
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          cd core-submodule
+          git fetch origin
+          git checkout ${{ steps.versions.outputs.core_ref }}
+          cd ..
+
+          cd frontend-submodule
+          git fetch origin
+          git checkout ${{ steps.versions.outputs.frontend_ref }}
+          cd ..
+
       - name: Start services
         if: steps.dedup.outputs.skip != 'true'
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+          docker compose up -d --build
           docker compose ps
 
       - name: Wait for services to be ready
