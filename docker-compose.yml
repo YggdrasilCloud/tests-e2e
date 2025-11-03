@@ -40,7 +40,7 @@ services:
     user: root
     command: >
       sh -c "
-        chmod -R 777 /app &&
+        (chmod -R 777 /app 2>/dev/null || true) &&
         su -s /bin/sh www-data -c 'composer install --no-interaction --prefer-dist' &&
         su -s /bin/sh www-data -c 'php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration' &&
         su -s /bin/sh www-data -c 'frankenphp run --config /etc/caddy/Caddyfile'
