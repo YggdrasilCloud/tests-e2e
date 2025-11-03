@@ -177,6 +177,20 @@ jobs:
         env:
           CI: true
 
+      - name: Collect backend logs on failure
+        if: failure() && steps.dedup.outputs.skip != 'true'
+        run: |
+          mkdir -p artifacts/logs
+          echo "Collecting backend container logs..."
+          docker compose logs backend > artifacts/logs/backend.log 2>&1 || echo "Failed to collect backend logs"
+          echo "Collecting database logs..."
+          docker compose logs db > artifacts/logs/db.log 2>&1 || echo "Failed to collect db logs"
+          echo "Collecting frontend logs..."
+          docker compose logs frontend > artifacts/logs/frontend.log 2>&1 || echo "Failed to collect frontend logs"
+
+          echo "Backend log preview (last 100 lines):"
+          tail -n 100 artifacts/logs/backend.log || echo "No backend logs found"
+
       - name: Create metadata artifact
         if: always() && steps.dedup.outputs.skip != 'true'
         run: |
