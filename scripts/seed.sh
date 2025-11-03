@@ -9,8 +9,8 @@ if ! docker compose ps backend | grep -q "Up"; then
     exit 1
 fi
 
-# Run seed command in backend container
+# Run seed command directly in backend container (avoid container recreation)
 echo "   Running seed command in backend container..."
-docker compose run --rm seed
+docker compose exec -T backend php bin/console app:seed:test
 
 echo "✅ Test data seeded successfully!"
