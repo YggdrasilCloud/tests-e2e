@@ -35,6 +35,7 @@ services:
     volumes:
       - ./core-submodule:/app:cached
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - test-storage:/app/var/storage  # Shared volume for photos and thumbnails
     user: root
     command: >
       sh -c "
@@ -88,8 +89,10 @@ services:
     volumes:
       - ./core-submodule:/app:cached
       - ./fixtures:/app/fixtures:ro
+      - test-storage:/app/var/storage  # Shared volume with backend for photos
     profiles:
       - manual
 
 volumes:
   test-db:
+  test-storage:  # Shared volume for photo and thumbnail storage
