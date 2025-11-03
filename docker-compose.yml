@@ -35,6 +35,7 @@ services:
     volumes:
       - ./core-submodule:/app:cached
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./fixtures:/app/fixtures:ro  # Test photo fixtures for seeding
       - test-storage:/app/var/storage  # Shared volume for photos and thumbnails
     user: root
     command: >
