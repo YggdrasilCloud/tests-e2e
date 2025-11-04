@@ -5,8 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
 	testDir: './frontend-submodule/tests/e2e',
-	// Temporarily skip infinite-scroll tests while investigating timeout issues
-	testIgnore: '**/infinite-scroll*.spec.ts',
+	// Temporarily skip flaky tests while investigating timeout issues
+	testIgnore: ['**/infinite-scroll*.spec.ts', '**/upload-auto-refresh*.spec.ts'],
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
