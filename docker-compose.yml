@@ -41,6 +41,9 @@ services:
     command: >
       sh -c "
         (chmod -R 777 /app 2>/dev/null || true) &&
+        mkdir -p /app/var/storage &&
+        chown -R www-data:www-data /app/var/storage &&
+        chmod -R 755 /app/var/storage &&
         su -s /bin/sh www-data -c 'composer install --no-interaction --prefer-dist' &&
         su -s /bin/sh www-data -c 'php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration' &&
         su -s /bin/sh www-data -c 'frankenphp run --config /etc/caddy/Caddyfile'
