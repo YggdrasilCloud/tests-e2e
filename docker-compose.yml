@@ -30,24 +30,20 @@ services:
       APP_ENV: test
       CORS_ALLOW_ORIGIN: "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$$"
       SERVER_NAME: ":8000"
+      FILE_STORAGE_PATH: "/app/var/storage"
     ports:
       - "8001:8000"  # Port 8001 sur l'hôte pour éviter conflit avec backend de dev
     volumes:
-      - ./core-submodule:/app:cached
+      - ./core-submodule:/app
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./fixtures:/app/fixtures:ro  # Test photo fixtures for seeding
-    tmpfs:
-      - /app/var/storage:uid=33,gid=33,mode=0777  # tmpfs for storage (uid/gid 33 = www-data)
     user: root
     command: >
       sh -c "
-        echo '=== Setting up storage permissions ===' &&
-        (chmod -R 777 /app 2>/dev/null || true) &&
         mkdir -p /app/var/storage &&
-        chown -R www-data:www-data /app/var/storage &&
-        chmod -R 777 /app/var/storage &&
-        ls -la /app/var/ &&
-        echo '=== Storage permissions set ===' &&
+        chown -R www-data:www-data /app/var &&
+        chmod -R 0777 /app/var &&
+        (chmod -R 777 /app 2>/dev/null || true) &&
         su -s /bin/sh www-data -c 'composer install --no-interaction --prefer-dist' &&
         su -s /bin/sh www-data -c 'php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration' &&
         su -s /bin/sh www-data -c 'frankenphp run --config /etc/caddy/Caddyfile'
@@ -93,12 +89,11 @@ services:
     environment:
       DATABASE_URL: postgresql://test:test@db:5432/yggdrasil
       APP_ENV: test
+      FILE_STORAGE_PATH: "/app/var/storage"
     command: php bin/console app:seed:test
     volumes:
       - ./core-submodule:/app:cached
       - ./fixtures:/app/fixtures:ro
-    tmpfs:
-      - /app/var/storage:uid=33,gid=33,mode=0777  # tmpfs for storage (uid/gid 33 = www-data)
     profiles:
       - manual
 
