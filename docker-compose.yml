@@ -36,7 +36,8 @@ services:
       - ./core-submodule:/app:cached
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./fixtures:/app/fixtures:ro  # Test photo fixtures for seeding
-      - test-storage:/app/var/storage  # Shared volume for photos and thumbnails
+    tmpfs:
+      - /app/var/storage:uid=33,gid=33,mode=0777  # tmpfs for storage (uid/gid 33 = www-data)
     user: root
     command: >
       sh -c "
@@ -96,10 +97,10 @@ services:
     volumes:
       - ./core-submodule:/app:cached
       - ./fixtures:/app/fixtures:ro
-      - test-storage:/app/var/storage  # Shared volume with backend for photos
+    tmpfs:
+      - /app/var/storage:uid=33,gid=33,mode=0777  # tmpfs for storage (uid/gid 33 = www-data)
     profiles:
       - manual
 
 volumes:
-  test-db:
-  test-storage:  # Shared volume for photo and thumbnail storage
+  test-db:  # PostgreSQL data persistence
