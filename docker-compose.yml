@@ -26,7 +26,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://test:test@db:5432/yggdrasil
+      DATABASE_URL: postgresql://test:test@db:5432/yggdrasil_test
       APP_ENV: test
       CORS_ALLOW_ORIGIN: "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$$"
       SERVER_NAME: ":8000"
@@ -87,7 +87,7 @@ services:
       backend:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://test:test@db:5432/yggdrasil
+      DATABASE_URL: postgresql://test:test@db:5432/yggdrasil_test
       APP_ENV: test
       FILE_STORAGE_PATH: "/app/var/storage"
     command: php bin/console app:seed:test
