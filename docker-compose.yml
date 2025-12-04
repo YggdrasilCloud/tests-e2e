@@ -34,6 +34,7 @@ services:
       CORS_ALLOW_ORIGIN: "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$$"
       SERVER_NAME: ":8000"
       FILE_STORAGE_PATH: "/app/var/storage"
+      STORAGE_DSN: "storage://local?root=var/storage"
     ports:
       - "8001:8000"  # Port 8001 sur l'hôte pour éviter conflit avec backend de dev
     volumes:
@@ -94,6 +95,7 @@ services:
       DATABASE_URL: postgresql://test:test@db:5432/yggdrasilcloud?serverVersion=16&charset=utf8
       APP_ENV: test
       FILE_STORAGE_PATH: "/app/var/storage"
+      STORAGE_DSN: "storage://local?root=var/storage"
     command: php bin/console app:seed:test
     volumes:
       - ./core-submodule:/app:cached
