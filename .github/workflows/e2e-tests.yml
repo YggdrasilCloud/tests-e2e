@@ -127,11 +127,13 @@ jobs:
         run: |
           cd core-submodule
           git fetch origin --tags
+          git fetch origin ${{ steps.versions.outputs.core_ref }} || true
           git checkout ${{ steps.versions.outputs.core_ref }}
           cd ..
 
           cd frontend-submodule
           git fetch origin --tags
+          git fetch origin ${{ steps.versions.outputs.frontend_ref }} || true
           git checkout ${{ steps.versions.outputs.frontend_ref }}
           cd ..
 
