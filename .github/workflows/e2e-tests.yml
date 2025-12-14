@@ -127,13 +127,15 @@ jobs:
         run: |
           cd core-submodule
           git fetch origin --tags
-          git fetch origin ${{ steps.versions.outputs.core_ref }} || true
+          # Try to fetch as branch, creating local tracking branch if it's a branch
+          git fetch origin ${{ steps.versions.outputs.core_ref }}:refs/heads/${{ steps.versions.outputs.core_ref }} 2>/dev/null || git fetch origin ${{ steps.versions.outputs.core_ref }} || true
           git checkout ${{ steps.versions.outputs.core_ref }}
           cd ..
 
           cd frontend-submodule
           git fetch origin --tags
-          git fetch origin ${{ steps.versions.outputs.frontend_ref }} || true
+          # Try to fetch as branch, creating local tracking branch if it's a branch
+          git fetch origin ${{ steps.versions.outputs.frontend_ref }}:refs/heads/${{ steps.versions.outputs.frontend_ref }} 2>/dev/null || git fetch origin ${{ steps.versions.outputs.frontend_ref }} || true
           git checkout ${{ steps.versions.outputs.frontend_ref }}
           cd ..
 
