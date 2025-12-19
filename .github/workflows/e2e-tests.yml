@@ -127,12 +127,16 @@ jobs:
         run: |
           cd core-submodule
           git fetch origin --tags
-          git checkout ${{ steps.versions.outputs.core_ref }}
+          # Fetch as branch if it exists, otherwise use tag/sha
+          git fetch origin ${{ steps.versions.outputs.core_ref }}:refs/remotes/origin/${{ steps.versions.outputs.core_ref }} 2>/dev/null || true
+          git checkout ${{ steps.shas.outputs.core_sha }}
           cd ..
 
           cd frontend-submodule
           git fetch origin --tags
-          git checkout ${{ steps.versions.outputs.frontend_ref }}
+          # Fetch as branch if it exists, otherwise use tag/sha
+          git fetch origin ${{ steps.versions.outputs.frontend_ref }}:refs/remotes/origin/${{ steps.versions.outputs.frontend_ref }} 2>/dev/null || true
+          git checkout ${{ steps.shas.outputs.frontend_sha }}
           cd ..
 
       - name: Start services
