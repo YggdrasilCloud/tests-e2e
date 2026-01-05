@@ -76,7 +76,7 @@
 
 ### Enhancements
 
-- [ ] Add `docker-compose.dev.yml` override for volumes
+- [ ] Add `compose.dev.yaml` override for volumes
   - Mount backend source for hot reload
   - Mount frontend source for hot reload
 

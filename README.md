@@ -235,7 +235,7 @@ Si les ports 5433, 8001 ou 5174 sont déjà utilisés :
 # Trouver le processus
 lsof -i :5433
 
-# Ou modifier docker-compose.yml
+# Ou modifier compose.yaml
 ```
 
 ### Backend ne démarre pas (permissions)
@@ -309,7 +309,7 @@ tests-e2e/
 │   ├── setup.sh           # Démarre les services
 │   ├── seed.sh            # Seed les données de test
 │   └── run-tests.sh       # Lance les tests
-├── docker-compose.yml      # DB + Backend + Frontend
+├── compose.yaml            # DB + Backend + Frontend
 ├── Caddyfile              # Config FrankenPHP pour tests
 ├── playwright.config.ts    # Config Playwright
 ├── global-setup.ts         # Validation avant tests

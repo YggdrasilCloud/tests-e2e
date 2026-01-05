@@ -288,7 +288,7 @@ docker compose run --rm seed
 docker ps
 docker stop <container-id>
 
-# Option 2: Change ports in docker-compose.yml
+# Option 2: Change ports in compose.yaml
 ports:
   - "5433:5432"  # Use different host port
 ```
