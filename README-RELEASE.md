@@ -90,9 +90,9 @@ FRONTEND_VERSION=v1.5.0    # or main, commit SHA
 
 ### Docker Compose Files
 
-- `docker-compose.yml` - Base configuration with builds
-- `docker-compose.ci.yml` - CI override using Docker images
-- `docker-compose.override.yml` - Local dev override (gitignored)
+- `compose.yaml` - Base configuration with builds
+- `compose.ci.yaml` - CI override using Docker images
+- `compose.override.yaml` - Local dev override (gitignored)
 
 ### Usage in CI
 
@@ -102,7 +102,7 @@ echo "CORE_VERSION=main" > .env
 echo "FRONTEND_VERSION=v1.5.0" >> .env
 
 # Start services with CI config
-docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+docker compose -f compose.yaml -f compose.ci.yaml up -d
 
 # Run E2E tests
 npm run test:e2e
@@ -168,7 +168,7 @@ After creating a tag, a final E2E verification runs with the new tag + counterpa
 ### Services not ready
 
 - Check Docker images are built and published
-- Verify `docker-compose.ci.yml` uses correct image names
+- Verify `compose.ci.yaml` uses correct image names
 - Check health check endpoints are correct
 
 ## Local Testing

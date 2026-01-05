@@ -1,6 +1,6 @@
 # Docker Compose override for CI/CD
 # Uses Docker images with versions from .env file
-# Usage: docker compose -f docker-compose.yml -f docker-compose.ci.yml up
+# Usage: docker compose -f compose.yaml -f compose.ci.yaml up
 
 services:
   backend:
